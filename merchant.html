@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OJEGIN - Panel Merchant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen pb-10">
+
+  <!-- Header Merchant -->
+  <header class="bg-purple-700 text-white p-5 rounded-b-3xl shadow-md">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div>
+        <span class="text-[10px] bg-purple-900 px-2 py-0.5 rounded font-bold">WARUNG / MERCHANT</span>
+        <h1 id="merchant-name" class="text-xl font-bold mt-1">Toko OJEGIN</h1>
+      </div>
+      <button onclick="logout()" class="text-xs bg-purple-800 hover:bg-purple-900 px-3 py-1.5 rounded-lg border border-purple-500">Keluar</button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-5">
+
+    <!-- Tambah Menu Makanan -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+      <h2 class="text-sm font-bold text-gray-800">Tambah Menu Makanan/Minuman</h2>
+
+      <div>
+        <label class="block text-[10px] text-gray-400 font-bold uppercase mb-1">Nama Menu</label>
+        <input type="text" id="menu-name" placeholder="Contoh: Nasi Goreng Spesial" class="w-full p-2.5 bg-gray-50 border rounded-lg text-xs focus:outline-purple-500">
+      </div>
+
+      <div>
+        <label class="block text-[10px] text-gray-400 font-bold uppercase mb-1">Harga (Rp)</label>
+        <input type="number" id="menu-price" placeholder="15000" class="w-full p-2.5 bg-gray-50 border rounded-lg text-xs focus:outline-purple-500">
+      </div>
+
+      <button onclick="addMenu()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold text-xs shadow-md transition">+ Simpan Menu</button>
+    </div>
+
+    <!-- Daftar Menu Warung -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+      <h2 class="text-sm font-bold text-gray-800">Katalog Menu Toko Kamu</h2>
+      <div id="menu-list" class="space-y-2 text-xs text-gray-500">
+        Belum ada menu tersimpan.
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhY_GI48jtnzZ0XpOTLY66iaTUW3qwe_8",
+      authDomain: "ojegin-92c72.firebaseapp.com",
+      projectId: "ojegin-92c72",
+      storageBucket: "ojegin-92c72.firebasestorage.app",
+      messagingSenderId: "1077908821084",
+      appId: "1:1077908821084:web:873b3d23ead38cb8c94299"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let merchantUid = "";
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        merchantUid = user.uid;
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) document.getElementById("merchant-name").innerText = snap.data().nama;
+        loadMenus();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    window.logout = function() { signOut(auth); };
+
+    window.addMenu = async function() {
+      const name = document.getElementById("menu-name").value;
+      const price = document.getElementById("menu-price").value;
+
+      if(!name || !price) {
+        alert("Lengkapi nama menu dan harganya!");
+        return;
+      }
+
+      await addDoc(collection(db, "merchant_menus"), {
+        merchantId: merchantUid,
+        namaMenu: name,
+        harga: Number(price)
+      });
+
+      alert("Menu berhasil ditambahkan!");
+      document.getElementById("menu-name").value = "";
+      document.getElementById("menu-price").value = "";
+    };
+
+    function loadMenus() {
+      const q = query(collection(db, "merchant_menus"), where("merchantId", "==", merchantUid));
+      onSnapshot(q, (snapshot) => {
+        const container = document.getElementById("menu-list");
+        container.innerHTML = "";
+
+        if(snapshot.empty) {
+          container.innerText = "Belum ada menu tersimpan.";
+          return;
+        }
+
+        snapshot.forEach((mDoc) => {
+          const m = mDoc.data();
+          const item = document.createElement("div");
+          item.className = "flex justify-between items-center p-2.5 bg-gray-50 rounded-lg border border-gray-100";
+          item.innerHTML = `<span class="font-semibold text-gray-800">${m.namaMenu}</span><span class="font-bold text-purple-600">Rp ${m.harga.toLocaleString('id-ID')}</span>`;
+          container.appendChild(item);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OJEGIN - Panel Driver</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen pb-10">
+
+  <!-- Header Driver Status -->
+  <header class="bg-gray-900 text-white p-5 rounded-b-3xl shadow-md">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div>
+        <span class="text-[10px] bg-blue-600 px-2 py-0.5 rounded font-bold">MITRA DRIVER</span>
+        <h1 id="driver-name" class="text-xl font-bold mt-1">Driver OJEGIN</h1>
+      </div>
+      <button onclick="logout()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-700">Keluar</button>
+    </div>
+
+    <!-- Toggle Status Online -->
+    <div class="max-w-md mx-auto mt-4 bg-gray-800 p-3 rounded-xl flex justify-between items-center border border-gray-700">
+      <span class="text-xs text-gray-300">Status Narik:</span>
+      <button id="btn-toggle-status" onclick="toggleOnline()" class="px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500 text-white">ONLINE</button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+    <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Orderan Masuk Disekitar</h2>
+
+    <!-- Daftar Order Realtime -->
+    <div id="order-feed" class="space-y-3">
+      <div class="bg-white p-4 rounded-xl border text-center text-xs text-gray-400">
+        Mencari pesanan terbaru...
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhY_GI48jtnzZ0XpOTLY66iaTUW3qwe_8",
+      authDomain: "ojegin-92c72.firebaseapp.com",
+      projectId: "ojegin-92c72",
+      storageBucket: "ojegin-92c72.firebasestorage.app",
+      messagingSenderId: "1077908821084",
+      appId: "1:1077908821084:web:873b3d23ead38cb8c94299"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    let isOnline = true;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) document.getElementById("driver-name").innerText = snap.data().nama;
+        listenOrders();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    window.logout = function() { signOut(auth); };
+
+    window.toggleOnline = function() {
+      isOnline = !isOnline;
+      const btn = document.getElementById("btn-toggle-status");
+      if(isOnline) {
+        btn.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500 text-white";
+        btn.innerText = "ONLINE";
+      } else {
+        btn.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-red-500 text-white";
+        btn.innerText = "OFFLINE";
+      }
+    };
+
+    function listenOrders() {
+      const q = query(collection(db, "orders"), where("status", "==", "MENUNGGU_DRIVER"));
+      onSnapshot(q, (snapshot) => {
+        const feed = document.getElementById("order-feed");
+        feed.innerHTML = "";
+
+        if(snapshot.empty) {
+          feed.innerHTML = `<div class="bg-white p-4 rounded-xl border text-center text-xs text-gray-400">Belum ada orderan masuk disekitar anda.</div>`;
+          return;
+        }
+
+        snapshot.forEach((orderDoc) => {
+          const o = orderDoc.data();
+          const card = document.createElement("div");
+          card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-200 space-y-2";
+          card.innerHTML = `
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold text-emerald-600">${o.jenis}</span>
+              <span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-semibold">${o.status}</span>
+            </div>
+            <div class="text-xs text-gray-700 space-y-1">
+              <p>📍 <span class="font-semibold">Jemput:</span> ${o.penjemputan}</p>
+              <p>🏁 <span class="font-semibold">Tujuan:</span> ${o.tujuan}</p>
+            </div>
+            <button onclick="acceptOrder('${orderDoc.id}')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold shadow-sm transition">Terima Orderan</button>
+          `;
+          feed.appendChild(card);
+        });
+      });
+    }
+
+    window.acceptOrder = async function(orderId) {
+      await updateDoc(doc(db, "orders", orderId), {
+        driverId: auth.currentUser.uid,
+        status: "DITERIMA_DRIVER"
+      });
+      alert("Orderan berhasil diterima!");
+    };
+  </script>
+</body>
+</html>

@@ -3,105 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OJEGIN - Ojek Online Lokal</title>
-  <!-- Tailwind CSS untuk Tampilan Modern -->
+  <title>OJEGIN - Layanan Utama</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+<body class="bg-gray-100 min-h-screen pb-10">
 
-  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden min-h-[600px] flex flex-col justify-between">
-    
-    <!-- Header OJEGIN -->
-    <div class="bg-emerald-600 p-6 text-white text-center">
-      <h1 class="text-3xl font-extrabold tracking-wider">OJEGIN</h1>
-      <p class="text-xs opacity-80 mt-1">Solusi Transportasi & Kurir Cepat</p>
+  <!-- Main Header Container -->
+  <header class="bg-emerald-600 text-white p-5 rounded-b-3xl shadow-md">
+    <div class="max-w-md mx-auto flex justify-between items-center mb-4">
+      <div>
+        <h1 class="text-2xl font-black tracking-wider">OJEGIN</h1>
+        <p class="text-xs text-emerald-100">Hai, <span id="user-name" class="font-bold">Pelanggan</span>!</p>
+      </div>
+      <button onclick="logout()" class="text-xs bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-500">Keluar</button>
     </div>
 
-    <!-- Konten Utama / Form Pemesanan -->
-    <div class="p-6 flex-1 flex flex-col justify-center space-y-4">
-      <h2 class="text-lg font-bold text-gray-800 text-center">Pesan Layanan OJEGIN</h2>
-      
+    <!-- Saldo OJE-Pay Dummy -->
+    <div class="max-w-md mx-auto bg-white/10 backdrop-blur-sm p-3 rounded-xl flex justify-between items-center text-xs">
       <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Lokasi Jemput</label>
-        <input type="text" id="jemput" placeholder="Masukkan lokasi jemput..." class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
+        <p class="text-emerald-100">Saldo OJE-Pay</p>
+        <p class="text-base font-bold">Rp 50.000</p>
       </div>
+      <button class="bg-white text-emerald-700 px-3 py-1 rounded-lg font-bold shadow-sm">+ Isi Saldo</button>
+    </div>
+  </header>
 
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Lokasi Tujuan</label>
-        <input type="text" id="tujuan" placeholder="Masukkan lokasi tujuan..." class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
-      </div>
+  <main class="max-w-md mx-auto p-4 space-y-5">
 
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Pilih Layanan</label>
-        <select id="layanan" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
-          <option value="OJEGIN Ride">OJEGIN Ride (Motor)</option>
-          <option value="OJEGIN Car">OJEGIN Car (Mobil)</option>
-          <option value="OJEGIN Send">OJEGIN Send (Kirim Barang)</option>
-        </select>
-      </div>
-
-      <button onclick="buatPesanan()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-200">
-        Pesan Sekarang
+    <!-- Grid Menu Layanan -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 grid grid-cols-4 gap-4 text-center">
+      <button onclick="selectService('OJEGIN Ride')" class="flex flex-col items-center space-y-1">
+        <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl font-bold">🛵</div>
+        <span class="text-xs font-semibold text-gray-700">Ride</span>
       </button>
 
-      <div id="status-pesanan" class="hidden p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center text-xs text-emerald-800 font-semibold">
-        Mencari Driver OJEGIN terdekat...
+      <button onclick="selectService('OJEGIN Car')" class="flex flex-col items-center space-y-1">
+        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl font-bold">🚗</div>
+        <span class="text-xs font-semibold text-gray-700">Car</span>
+      </button>
+
+      <button onclick="selectService('OJEGIN Food')" class="flex flex-col items-center space-y-1">
+        <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-xl font-bold">🍔</div>
+        <span class="text-xs font-semibold text-gray-700">Food</span>
+      </button>
+
+      <button onclick="selectService('OJEGIN Send')" class="flex flex-col items-center space-y-1">
+        <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl font-bold">📦</div>
+        <span class="text-xs font-semibold text-gray-700">Send</span>
+      </button>
+    </div>
+
+    <!-- Form Pemesanan Perjalanan -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+      <h2 id="service-title" class="text-sm font-bold text-gray-800">Pesan OJEGIN Ride</h2>
+
+      <div>
+        <label class="block text-[10px] text-gray-400 font-bold uppercase mb-1">Lokasi Jemput</label>
+        <input type="text" id="loc-pickup" placeholder="Masukkan lokasi penjemputan" class="w-full p-2.5 bg-gray-50 border rounded-lg text-xs focus:outline-emerald-500">
       </div>
+
+      <div>
+        <label class="block text-[10px] text-gray-400 font-bold uppercase mb-1">Lokasi Tujuan</label>
+        <input type="text" id="loc-destination" placeholder="Masukkan lokasi tujuan" class="w-full p-2.5 bg-gray-50 border rounded-lg text-xs focus:outline-emerald-500">
+      </div>
+
+      <button onclick="createOrder()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs shadow-md transition">Pesan Sekarang</button>
     </div>
 
-    <!-- Footer -->
-    <div class="p-4 bg-gray-50 border-t text-center text-xs text-gray-500">
-      &copy; 2026 OJEGIN Indonesia
-    </div>
+  </main>
 
-  </div>
-
-  <!-- Firebase SDK (Version 9+ Modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Konfigurasi Proyek Firebase milikmu
     const firebaseConfig = {
-      apiKey: "ISI_DENGAN_API_KEY_FIREBASE_KAMU",
-      authDomain: "PROJECT_ID_KAMU.firebaseapp.com",
-      projectId: "PROJECT_ID_KAMU",
-      storageBucket: "PROJECT_ID_KAMU.appspot.com",
-      messagingSenderId: "SENDER_ID_KAMU",
-      appId: "APP_ID_KAMU"
+      apiKey: "AIzaSyAhY_GI48jtnzZ0XpOTLY66iaTUW3qwe_8",
+      authDomain: "ojegin-92c72.firebaseapp.com",
+      projectId: "ojegin-92c72",
+      storageBucket: "ojegin-92c72.firebasestorage.app",
+      messagingSenderId: "1077908821084",
+      appId: "1:1077908821084:web:873b3d23ead38cb8c94299"
     };
 
-    // Inisialisasi Firebase
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getFirestore(app);
+    let currentUser = null;
+    let selectedType = "OJEGIN Ride";
 
-    // Fungsi Kirim Pesanan ke Database
-    window.buatPesanan = async function() {
-      const lokasiJemput = document.getElementById('jemput').value;
-      const lokasiTujuan = document.getElementById('tujuan').value;
-      const jenisLayanan = document.getElementById('layanan').value;
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) document.getElementById("user-name").innerText = snap.data().nama;
+      } else {
+        window.location.href = "login.html";
+      }
+    });
 
-      if (!lokasiJemput || !lokasiTujuan) {
-        alert("Harap isi lokasi jemput dan tujuan!");
+    window.logout = function() { signOut(auth); };
+
+    window.selectService = function(type) {
+      selectedType = type;
+      document.getElementById("service-title").innerText = "Pesan " + type;
+    };
+
+    window.createOrder = async function() {
+      const pickup = document.getElementById("loc-pickup").value;
+      const dest = document.getElementById("loc-destination").value;
+
+      if (!pickup || !dest) {
+        alert("Lengkapi lokasi jemput dan tujuan!");
         return;
       }
 
-      try {
-        // Simpan data ke koleksi 'orders' di Cloud Firestore
-        await addDoc(collection(db, "orders"), {
-          layanan: jenisLayanan,
-          lokasi_jemput: lokasiJemput,
-          lokasi_tujuan: lokasiTujuan,
-          status: "SEARCHING",
-          created_at: serverTimestamp()
-        });
+      await addDoc(collection(db, "orders"), {
+        customerId: currentUser.uid,
+        jenis: selectedType,
+        penjemputan: pickup,
+        tujuan: dest,
+        status: "MENUNGGU_DRIVER",
+        created_at: serverTimestamp()
+      });
 
-        document.getElementById('status-pesanan').classList.remove('hidden');
-        alert("Pesanan OJEGIN berhasil dibuat!");
-      } catch (e) {
-        console.error("Gagal membuat pesanan: ", e);
-        alert("Terjadi kesalahan koneksi ke Firebase.");
-      }
+      alert("Pesanan berhasil dibuat! Mencari driver terdekat...");
+      document.getElementById("loc-pickup").value = "";
+      document.getElementById("loc-destination").value = "";
     };
   </script>
 </body>
