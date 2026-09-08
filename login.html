@@ -155,7 +155,9 @@
     };
 
     function redirectByRole(role) {
-      if (role === 'driver') {
+      if (role === 'admin') {
+        window.location.href = "admin.html";
+      } else if (role === 'driver') {
         window.location.href = "driver.html";
       } else if (role === 'merchant') {
         window.location.href = "merchant.html";
