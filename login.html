@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OJEGIN - Masuk & Daftar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 border space-y-5">
+    
+    <!-- Logo & Header -->
+    <div class="text-center space-y-1">
+      <h1 class="text-3xl font-extrabold text-emerald-600 tracking-wider">OJEGIN</h1>
+      <p class="text-xs text-gray-500">Masuk untuk melanjutkan ke layanan OJEGIN</p>
+    </div>
+
+    <!-- Tab Pilihan (Login / Daftar) -->
+    <div class="flex border-b border-gray-200 text-sm font-bold text-center">
+      <button id="tab-login" onclick="switchTab('login')" class="w-1/2 py-2 border-b-2 border-emerald-600 text-emerald-600">Masuk</button>
+      <button id="tab-register" onclick="switchTab('register')" class="w-1/2 py-2 text-gray-400 hover:text-gray-600">Daftar Baru</button>
+    </div>
+
+    <!-- Form Input -->
+    <div class="space-y-4">
+      
+      <!-- Field Nama (Hanya untuk Daftar) -->
+      <div id="field-nama" class="hidden">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Lengkap</label>
+        <input type="text" id="auth-nama" placeholder="Contoh: Ahmad" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
+      </div>
+
+      <!-- Field Role (Hanya untuk Daftar) -->
+      <div id="field-role" class="hidden">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Daftar Sebagai</label>
+        <select id="auth-role" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
+          <option value="customer">Pelanggan</option>
+          <option value="driver">Mitra Driver</option>
+          <option value="merchant">Mitra Warung / Merchant</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+        <input type="email" id="auth-email" placeholder="nama@email.com" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Kata Sandi</label>
+        <input type="password" id="auth-password" placeholder="Min. 6 Karakter" class="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-emerald-500">
+      </div>
+
+      <button id="btn-submit" onclick="submitAuth()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-200">
+        Masuk Sekiranya
+      </button>
+
+    </div>
+
+    <div id="auth-error" class="hidden p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-xs text-center font-semibold"></div>
+
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Konfigurasi Firebase milik kamu
+    const firebaseConfig = {
+      apiKey: "AIzaSyAhY_GI48jtnzZ0XpOTLY66iaTUW3qwe_8",
+      authDomain: "ojegin-92c72.firebaseapp.com",
+      projectId: "ojegin-92c72",
+      storageBucket: "ojegin-92c72.firebasestorage.app",
+      messagingSenderId: "1077908821084",
+      appId: "1:1077908821084:web:873b3d23ead38cb8c94299",
+      measurementId: "G-N2T1PHZ2SE"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let mode = 'login';
+
+    window.switchTab = function(type) {
+      mode = type;
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.classList.add('hidden');
+
+      if (type === 'register') {
+        document.getElementById('tab-register').className = "w-1/2 py-2 border-b-2 border-emerald-600 text-emerald-600";
+        document.getElementById('tab-login').className = "w-1/2 py-2 text-gray-400 hover:text-gray-600";
+        document.getElementById('field-nama').classList.remove('hidden');
+        document.getElementById('field-role').classList.remove('hidden');
+        document.getElementById('btn-submit').innerText = "Daftar Akun OJEGIN";
+      } else {
+        document.getElementById('tab-login').className = "w-1/2 py-2 border-b-2 border-emerald-600 text-emerald-600";
+        document.getElementById('tab-register').className = "w-1/2 py-2 text-gray-400 hover:text-gray-600";
+        document.getElementById('field-nama').classList.add('hidden');
+        document.getElementById('field-role').classList.add('hidden');
+        document.getElementById('btn-submit').innerText = "Masuk Sekiranya";
+      }
+    };
+
+    window.submitAuth = async function() {
+      const email = document.getElementById('auth-email').value;
+      const password = document.getElementById('auth-password').value;
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.classList.add('hidden');
+
+      if (!email || !password) {
+        showError("Email dan Password tidak boleh kosong!");
+        return;
+      }
+
+      try {
+        if (mode === 'register') {
+          const nama = document.getElementById('auth-nama').value;
+          const role = document.getElementById('auth-role').value;
+
+          if (!nama) {
+            showError("Nama lengkap harus diisi!");
+            return;
+          }
+
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            nama: nama,
+            email: email,
+            role: role,
+            created_at: serverTimestamp()
+          });
+
+          redirectByRole(role);
+
+        } else {
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          const docSnap = await getDoc(doc(db, "users", user.uid));
+          if (docSnap.exists()) {
+            redirectByRole(docSnap.data().role);
+          } else {
+            window.location.href = "index.html";
+          }
+        }
+      } catch (e) {
+        showError(e.message);
+      }
+    };
+
+    function redirectByRole(role) {
+      if (role === 'driver') {
+        window.location.href = "driver.html";
+      } else if (role === 'merchant') {
+        window.location.href = "merchant.html";
+      } else {
+        window.location.href = "index.html";
+      }
+    }
+
+    function showError(msg) {
+      const errorDiv = document.getElementById('auth-error');
+      errorDiv.innerText = msg;
+      errorDiv.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
