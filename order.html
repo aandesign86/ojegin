@@ -3,90 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OJEGIN - Pemesanan Layanan</title>
+  <title>OJEGIN - Pemesanan Layanan (Google Maps Asli)</title>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 min-h-screen pb-12 text-gray-800">
+  
+  <!-- PENTING: Ganti YOUR_GOOGLE_MAPS_API_KEY dengan API Key Google Maps Anda yang aktif -->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
 
-  <!-- Header Pemesanan -->
-  <header class="bg-white px-5 py-3 flex items-center gap-3 sticky top-0 z-30 border-b border-gray-100 shadow-sm">
-    <a href="pelanggan.html" class="p-2 bg-gray-100 rounded-full font-bold text-gray-600 hover:bg-emerald-100 hover:text-emerald-700 transition">
+  <style>
+    /* Styling agar tampilan bersih ala aplikasi on-demand modern */
+    .map-container {
+      width: 100%;
+      height: 320px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800 flex flex-col justify-between">
+
+  <!-- Header Layar Pemesanan -->
+  <header class="bg-white px-4 py-3 flex items-center gap-3 sticky top-0 z-30 shadow-sm">
+    <a href="pelanggan.html" class="w-9 h-9 flex items-center justify-center bg-gray-100 rounded-full font-bold text-gray-700 hover:bg-gray-200 transition">
       &larr;
     </a>
     <div>
-      <h1 class="text-base font-bold text-gray-800" id="service-title">Pesan Layanan</h1>
-      <p class="text-[10px] text-gray-400">Pilih titik penjemputan & tujuan</p>
+      <h1 class="text-sm font-bold text-gray-900" id="service-title">Atur Lokasi Google Maps</h1>
+      <p class="text-[10px] text-gray-500">Pencarian presisi tinggi menggunakan Google Maps API</p>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto p-4 space-y-4">
+  <!-- Area Peta Google Maps Asli -->
+  <div class="relative w-full flex-grow">
+    <div id="map" class="map-container"></div>
+  </div>
 
-    <!-- Simulasi Peta Virtual -->
-    <div class="w-full h-44 bg-emerald-100 rounded-3xl relative overflow-hidden border border-emerald-200 flex items-center justify-center">
-      <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#059669_1px,transparent_1px)] [background-size:16px_16px]"></div>
-      <div class="text-center z-10 p-3">
-        <span class="text-3xl animate-bounce inline-block">📍</span>
-        <p class="text-xs font-bold text-emerald-800 mt-1">Sistem Peta Rute OJEGIN</p>
-        <p class="text-[10px] text-emerald-600">Pelacakan Presisi Berbasis GPS</p>
-      </div>
-    </div>
-
-    <!-- Form Pemesanan -->
-    <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 space-y-4">
+  <!-- Panel Bawah Form Pemesanan -->
+  <div class="bg-white rounded-t-3xl p-5 shadow-2xl border-t border-gray-100 z-20 space-y-4 -mt-6">
+    
+    <!-- Indikator Rute (Kolom Input dengan Google Places Autocomplete) -->
+    <div class="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
       
-      <!-- Input Lokasi -->
-      <div class="space-y-3">
-        <div>
-          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lokasi Penjemputan / Asal</label>
-          <input type="text" id="pickup-location" value="Jl. Merdeka No. 12" class="w-full border p-3 rounded-2xl text-xs mt-1 focus:ring-2 focus:ring-emerald-500 outline-none">
-        </div>
-        <div>
-          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lokasi Tujuan</label>
-          <input type="text" id="destination-location" placeholder="Masukkan lokasi tujuan..." class="w-full border p-3 rounded-2xl text-xs mt-1 focus:ring-2 focus:ring-emerald-500 outline-none" oninput="calculatePrice()">
+      <!-- Lokasi Penjemputan -->
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0 ring-4 ring-emerald-100"></div>
+        <div class="flex-grow">
+          <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Penjemputan</label>
+          <input type="text" id="pickup-location" placeholder="Ketik lokasi jemput atau gunakan GPS..." class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none mt-0.5">
         </div>
       </div>
 
-      <!-- Opsi Metode Pembayaran -->
-      <div class="border-t pt-3">
-        <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Metode Pembayaran</label>
-        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-2xl mt-1 border border-gray-100">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">💳</span>
-            <div>
-              <p class="text-xs font-bold text-gray-800">OJEGIN-PAY</p>
-              <p class="text-[10px] text-gray-400" id="current-balance-label">Saldo: Rp --</p>
-            </div>
-          </div>
-          <span class="text-xs font-bold text-emerald-600 uppercase">Utama</span>
+      <div class="border-t border-gray-200 my-1 ml-6"></div>
+
+      <!-- Lokasi Tujuan -->
+      <div class="flex items-center gap-3">
+        <div class="w-3 h-3 rounded-sm bg-red-500 flex-shrink-0 ring-4 ring-red-100"></div>
+        <div class="flex-grow">
+          <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Tujuan</label>
+          <input type="text" id="destination-location" placeholder="Mau ke mana hari ini? (Cari tempat/jalan)" class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none mt-0.5" oninput="calculatePrice()">
         </div>
       </div>
-
-      <!-- Detail Ringkasan Harga -->
-      <div class="border-t pt-3 space-y-1.5 text-xs">
-        <div class="flex justify-between text-gray-500">
-          <span>Tarif Dasar</span>
-          <span id="base-price">Rp 0</span>
-        </div>
-        <div class="flex justify-between text-emerald-600 font-semibold" id="promo-row" style="display:none;">
-          <span>Voucher Promo Applied</span>
-          <span id="promo-discount">-Rp 0</span>
-        </div>
-        <div class="flex justify-between text-sm font-bold text-gray-800 pt-2 border-t">
-          <span>Total Pembayaran</span>
-          <span id="total-price" class="text-emerald-600">Rp 0</span>
-        </div>
-      </div>
-
-      <!-- Tombol Eksekusi Order -->
-      <button onclick="submitOrder()" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg active:scale-95">
-        Pesan Sekarang
-      </button>
 
     </div>
 
-  </main>
+    <!-- Metode Pembayaran & Saldo -->
+    <div class="flex justify-between items-center bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xl">💳</span>
+        <div>
+          <p class="text-xs font-bold text-gray-900">OJEGIN-PAY</p>
+          <p class="text-[10px] text-emerald-700 font-medium" id="current-balance-label">Saldo: Rp --</p>
+        </div>
+      </div>
+      <span class="text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-1 rounded-full uppercase tracking-wider">Utama</span>
+    </div>
+
+    <!-- Ringkasan Tarif & Total -->
+    <div class="space-y-1 text-xs px-1">
+      <div class="flex justify-between text-gray-500">
+        <span>Estimasi Tarif</span>
+        <span id="base-price">Rp 0</span>
+      </div>
+      <div class="flex justify-between text-emerald-600 font-semibold" id="promo-row" style="display:none;">
+        <span>Diskon Voucher</span>
+        <span id="promo-discount">-Rp 0</span>
+      </div>
+      <div class="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t">
+        <span>Total Pembayaran</span>
+        <span id="total-price" class="text-emerald-600 text-base">Rp 0</span>
+      </div>
+    </div>
+
+    <!-- Tombol Pesan -->
+    <button onclick="submitOrder()" class="w-full bg-[#00B14F] hover:bg-[#009442] text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-600/30 active:scale-98 text-sm">
+      Pesan Sekarang
+    </button>
+
+  </div>
 
   <script>
+    let map, marker, geocoder;
+
+    // Fungsi Inisialisasi Google Maps
+    function initMap() {
+      const defaultLatLng = { lat: -6.200000, lng: 106.816666 }; // Jakarta
+
+      // Buat peta baru menggunakan Google Maps API
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: defaultLatLng,
+        zoom: 15,
+        disableDefaultUI: false,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: google.maps.ControlPosition.RIGHT_TOP
+        }
+      });
+
+      geocoder = new google.maps.Geocoder();
+
+      // Marker utama yang bisa digeser (draggable)
+      marker = new google.maps.Marker({
+        position: defaultLatLng,
+        map: map,
+        draggable: true,
+        title: "Geser untuk tentukan titik jemput"
+      });
+
+      // Update alamat saat marker selesai digeser
+      marker.addListener("dragend", function(event) {
+        const pos = event.latLng;
+        updateAddressFromLatLng(pos);
+      });
+
+      // Integrasi Google Places Autocomplete untuk kolom Penjemputan
+      const pickupInput = document.getElementById("pickup-location");
+      const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput);
+      pickupAutocomplete.bindTo("bounds", map);
+      pickupAutocomplete.addListener("place_changed", function() {
+        const place = pickupAutocomplete.getPlace();
+        if (!place.geometry) return;
+        map.setCenter(place.geometry.location);
+        map.setZoom(16);
+        marker.setPosition(place.geometry.location);
+      });
+
+      // Integrasi Google Places Autocomplete untuk kolom Tujuan
+      const destInput = document.getElementById("destination-location");
+      const destAutocomplete = new google.maps.places.Autocomplete(destInput);
+      destAutocomplete.bindTo("bounds", map);
+      destAutocomplete.addListener("place_changed", function() {
+        const place = destAutocomplete.getPlace();
+        if (!place.geometry) return;
+        calculatePrice();
+      });
+
+      // Tombol Kustom GPS (Lokasi Saya) ala Google Maps
+      createGpsButton();
+
+      // Deteksi GPS otomatis saat pertama kali dibuka
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            map.setCenter(pos);
+            marker.setPosition(pos);
+            updateAddressFromLatLng(pos);
+          },
+          () => {
+            updateAddressFromLatLng(defaultLatLng);
+          }
+        );
+      }
+    }
+
+    // Fungsi Reverse Geocoding Google untuk mengubah koordinat jadi teks alamat
+    function updateAddressFromLatLng(latLng) {
+      geocoder.geocode({ location: latLng }, (results, status) => {
+        if (status === "OK" && results[0]) {
+          document.getElementById("pickup-location").value = results[0].formatted_address;
+        } else {
+          document.getElementById("pickup-location").value = `${latLng.lat().toFixed(4)}, ${latLng.lng().toFixed(4)}`;
+        }
+      });
+    }
+
+    // Membuat Tombol GPS Melayang di Peta
+    function createGpsButton() {
+      const gpsDiv = document.createElement("div");
+      gpsDiv.style.cssText = "background:white; width:40px; height:40px; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; cursor:pointer; margin:10px; margin-top:15px;";
+      gpsDiv.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='#4285F4' width='22' height='22'><path d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/></svg>`;
+      gpsDiv.title = "Pusatkan ke Lokasi Saya";
+
+      gpsDiv.addEventListener("click", () => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            map.setCenter(pos);
+            marker.setPosition(pos);
+            updateAddressFromLatLng(pos);
+          });
+        }
+      });
+
+      map.controls[google.maps.ControlPosition.RIGHT_TOP].push(gpsDiv);
+    }
+
+    // Panggil initMap setelah Google Maps Script selesai dimuat
+    window.onload = function() {
+      if (typeof google !== 'undefined') {
+        initMap();
+      }
+    };
+
+    // Konfigurasi Layanan & Harga
     const urlParams = new URLSearchParams(window.location.search);
     const serviceType = urlParams.get('service') || 'bike';
 
@@ -108,7 +240,7 @@
 
     function calculatePrice() {
       const dest = document.getElementById('destination-location').value;
-      baseAmount = dest.length > 0 ? currentConfig.rate + (dest.length * 500) : currentConfig.rate;
+      baseAmount = dest.length > 0 ? currentConfig.rate + (dest.length * 200) : currentConfig.rate;
       
       let discount = 0;
       const activePromo = localStorage.getItem('ojegin_active_promo');
@@ -127,10 +259,10 @@
 
     function submitOrder() {
       const dest = document.getElementById('destination-location').value;
-      if (!dest) return alert('Harap isi lokasi tujuan terlebih dahulu!');
-      if (finalAmount > balance) return alert('Saldo OJEGIN-PAY Anda tidak mencukupi, silakan isi ulang saldo terlebih dahulu!');
+      
+      if (!dest) return alert('Silakan isi atau cari lokasi tujuan terlebih dahulu!');
+      if (finalAmount > balance) return alert('Saldo OJEGIN-PAY tidak mencukupi, silakan top up terlebih dahulu!');
 
-      // Kurangi saldo & simpan histori
       balance -= finalAmount;
       localStorage.setItem('ojegin_balance', balance);
 
@@ -144,9 +276,9 @@
         icon: serviceType === 'bike' ? '🛵' : serviceType === 'car' ? '🚗' : serviceType === 'food' ? '🍔' : '📦'
       });
       localStorage.setItem('ojegin_transactions', JSON.stringify(transactions));
-      localStorage.removeItem('ojegin_active_promo'); // Reset promo setelah pakai
+      localStorage.removeItem('ojegin_active_promo');
 
-      alert('Pesanan Berhasil Diproses! Driver sedang menuju lokasi Anda.');
+      alert('Pesanan Berhasil! Driver terdekat sedang menuju ke titik penjemputan Anda.');
       window.location.href = 'pelanggan.html';
     }
   </script>
