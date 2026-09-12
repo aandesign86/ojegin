@@ -3,282 +3,366 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OJEGIN - Pemesanan Layanan (Google Maps Asli)</title>
+  <title>OJEGIN - Pesan Ojek</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- PENTING: Ganti YOUR_GOOGLE_MAPS_API_KEY dengan API Key Google Maps Anda yang aktif -->
-  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places"></script>
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    /* Styling agar tampilan bersih ala aplikasi on-demand modern */
-    .map-container {
-      width: 100%;
-      height: 320px;
+    html, body { height: 100%; margin: 0; padding: 0; }
+    
+    .autocomplete-box {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      z-index: 9999;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .autocomplete-item {
+      padding: 10px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0fdf4;
     }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 flex flex-col justify-between">
 
-  <!-- Header Layar Pemesanan -->
+  <!-- Header -->
   <header class="bg-white px-4 py-3 flex items-center gap-3 sticky top-0 z-30 shadow-sm">
-    <a href="pelanggan.html" class="w-9 h-9 flex items-center justify-center bg-gray-100 rounded-full font-bold text-gray-700 hover:bg-gray-200 transition">
-      &larr;
-    </a>
+    <a href="pelanggan.html" class="w-9 h-9 flex items-center justify-center bg-gray-100 rounded-full font-bold text-gray-700 hover:bg-gray-200 transition">&larr;</a>
     <div>
-      <h1 class="text-sm font-bold text-gray-900" id="service-title">Atur Lokasi Google Maps</h1>
-      <p class="text-[10px] text-gray-500">Pencarian presisi tinggi menggunakan Google Maps API</p>
+      <h1 class="text-base font-bold text-gray-900">Pesan OJEGIN</h1>
+      <p class="text-[10px] text-gray-500">Geser pin pada peta untuk lokasi presisi</p>
     </div>
   </header>
 
-  <!-- Area Peta Google Maps Asli -->
-  <div class="relative w-full flex-grow">
-    <div id="map" class="map-container"></div>
-  </div>
-
-  <!-- Panel Bawah Form Pemesanan -->
-  <div class="bg-white rounded-t-3xl p-5 shadow-2xl border-t border-gray-100 z-20 space-y-4 -mt-6">
+  <!-- Content Container -->
+  <div class="p-4 space-y-4 flex-grow flex flex-col">
     
-    <!-- Indikator Rute (Kolom Input dengan Google Places Autocomplete) -->
-    <div class="space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-      
-      <!-- Lokasi Penjemputan -->
-      <div class="flex items-center gap-3">
-        <div class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0 ring-4 ring-emerald-100"></div>
-        <div class="flex-grow">
-          <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Penjemputan</label>
-          <input type="text" id="pickup-location" placeholder="Ketik lokasi jemput atau gunakan GPS..." class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none mt-0.5">
+    <!-- Peta di dalam Box -->
+    <div class="w-full h-[280px] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
+      <div id="map" class="w-full h-full"></div>
+    </div>
+
+    <!-- Form Pemesanan -->
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 space-y-4">
+      <div class="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+        
+        <!-- Kolom Input Penjemputan -->
+        <div class="flex items-start gap-3 relative">
+          <div class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0 ring-4 ring-emerald-100 mt-3"></div>
+          <div class="flex-grow relative">
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Jemput (Pin Hijau)</label>
+            </div>
+            
+            <!-- Kolom Teks Pencarian -->
+            <div class="relative flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 shadow-sm">
+              <input type="text" id="pickup-input" placeholder="Cari Desa/Kecamatan/Nama Tempat..." autocomplete="off" class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none pr-12">
+              
+              <!-- Tombol Silang Hapus Teks -->
+              <button type="button" id="clear-pickup" onclick="clearInput('pickup-input', 'pickup-results')" class="hidden text-gray-400 hover:text-gray-600 font-bold text-xs bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center leading-none mr-1.5">&times;</button>
+              
+              <!-- Tombol Ikon GPS -->
+              <button type="button" onclick="getGPSLocation()" title="Gunakan Lokasi Saat Ini" class="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-full border border-emerald-200 transition-all flex items-center justify-center active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <circle cx="12" cy="12" r="8"></circle>
+                  <line x1="12" y1="2" x2="12" y2="4"></line>
+                  <line x1="12" y1="20" x2="12" y2="22"></line>
+                  <line x1="2" y1="12" x2="4" y2="12"></line>
+                  <line x1="20" y1="12" x2="22" y2="12"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <!-- Keterangan Diperbarui dengan Ikon GPS Abu-abu -->
+            <p class="text-[10px] text-gray-400 leading-tight mt-1 flex items-center gap-1 flex-wrap">
+              <span>Ketik Desa/Kecamatan kemudian geser pin sesuai titik koordinat agar presisi atau klik ikon GPS</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-gray-400 inline-block -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <circle cx="12" cy="12" r="8"></circle>
+                <line x1="12" y1="2" x2="12" y2="4"></line>
+                <line x1="12" y1="20" x2="12" y2="22"></line>
+                <line x1="2" y1="12" x2="4" y2="12"></line>
+                <line x1="20" y1="12" x2="22" y2="12"></line>
+              </svg>
+            </p>
+            <div id="pickup-results" class="autocomplete-box hidden"></div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-200 my-1 ml-6"></div>
+
+        <!-- Kolom Input Tujuan -->
+        <div class="flex items-start gap-3 relative">
+          <!-- Pin Merah Diubah Menjadi Bulat (rounded-full) -->
+          <div class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 ring-4 ring-red-100 mt-3"></div>
+          <div class="flex-grow relative">
+            <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Lokasi Tujuan (Pin Merah)</label>
+            
+            <!-- Kolom Teks Pencarian -->
+            <div class="relative flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 shadow-sm">
+              <input type="text" id="dest-input" placeholder="Cari Desa/Kecamatan/Nama Tempat..." autocomplete="off" class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none pr-6">
+              
+              <!-- Tombol Silang Hapus Teks -->
+              <button type="button" id="clear-dest" onclick="clearInput('dest-input', 'dest-results')" class="hidden text-gray-400 hover:text-gray-600 font-bold text-xs bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center leading-none">&times;</button>
+            </div>
+            <p class="text-[10px] text-gray-400 leading-tight mt-1">Ketik Desa/Kecamatan kemudian geser pin sesuai titik koordinat agar presisi</p>
+            <div id="dest-results" class="autocomplete-box hidden"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Estimasi Jarak & Harga -->
+      <div class="space-y-1 text-xs px-1">
+        <div class="flex justify-between text-gray-500">
+          <span>Estimasi Jarak</span>
+          <span id="distance-label">0 km</span>
+        </div>
+        <div class="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t">
+          <span>Total Pembayaran</span>
+          <span id="total-price" class="text-emerald-600 text-base">Rp 0</span>
         </div>
       </div>
 
-      <div class="border-t border-gray-200 my-1 ml-6"></div>
-
-      <!-- Lokasi Tujuan -->
-      <div class="flex items-center gap-3">
-        <div class="w-3 h-3 rounded-sm bg-red-500 flex-shrink-0 ring-4 ring-red-100"></div>
-        <div class="flex-grow">
-          <label class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Tujuan</label>
-          <input type="text" id="destination-location" placeholder="Mau ke mana hari ini? (Cari tempat/jalan)" class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none mt-0.5" oninput="calculatePrice()">
-        </div>
-      </div>
-
+      <button onclick="submitOrder()" class="w-full bg-[#00B14F] hover:bg-[#009442] text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-emerald-600/30 text-sm">
+        Pesan Sekarang
+      </button>
     </div>
-
-    <!-- Metode Pembayaran & Saldo -->
-    <div class="flex justify-between items-center bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100">
-      <div class="flex items-center gap-2.5">
-        <span class="text-xl">💳</span>
-        <div>
-          <p class="text-xs font-bold text-gray-900">OJEGIN-PAY</p>
-          <p class="text-[10px] text-emerald-700 font-medium" id="current-balance-label">Saldo: Rp --</p>
-        </div>
-      </div>
-      <span class="text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-1 rounded-full uppercase tracking-wider">Utama</span>
-    </div>
-
-    <!-- Ringkasan Tarif & Total -->
-    <div class="space-y-1 text-xs px-1">
-      <div class="flex justify-between text-gray-500">
-        <span>Estimasi Tarif</span>
-        <span id="base-price">Rp 0</span>
-      </div>
-      <div class="flex justify-between text-emerald-600 font-semibold" id="promo-row" style="display:none;">
-        <span>Diskon Voucher</span>
-        <span id="promo-discount">-Rp 0</span>
-      </div>
-      <div class="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t">
-        <span>Total Pembayaran</span>
-        <span id="total-price" class="text-emerald-600 text-base">Rp 0</span>
-      </div>
-    </div>
-
-    <!-- Tombol Pesan -->
-    <button onclick="submitOrder()" class="w-full bg-[#00B14F] hover:bg-[#009442] text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-600/30 active:scale-98 text-sm">
-      Pesan Sekarang
-    </button>
 
   </div>
 
   <script>
-    let map, marker, geocoder;
+    let pickupLatLng = null;
+    let destLatLng = null;
+    let map = null;
+    let pickupMarker = null;
+    let destMarker = null;
+    let routeLine = null;
 
-    // Fungsi Inisialisasi Google Maps
-    function initMap() {
-      const defaultLatLng = { lat: -6.200000, lng: 106.816666 }; // Jakarta
+    // Icon Marker Custom
+    const greenIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
 
-      // Buat peta baru menggunakan Google Maps API
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: defaultLatLng,
-        zoom: 15,
-        disableDefaultUI: false,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: google.maps.ControlPosition.RIGHT_TOP
+    const redIcon = L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    // Inisialisasi Peta (Zoom Control Aktif)
+    map = L.map('map', { zoomControl: true }).setView([-2.548926, 118.014863], 5);
+
+    // Layer Satelit Google
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: 'Google Maps Satellite'
+    }).addTo(map);
+
+    // Set Pin Jemput
+    function setPickupLocation(lat, lng) {
+      pickupLatLng = [lat, lng];
+      if (!pickupMarker) {
+        pickupMarker = L.marker(pickupLatLng, { icon: greenIcon, draggable: true }).addTo(map).bindPopup("Titik Jemput (Geser Saya)");
+        pickupMarker.on('dragend', function (e) {
+          pickupLatLng = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+          reverseGeocode(pickupLatLng[0], pickupLatLng[1], 'pickup-input');
+          updateRoute();
+        });
+      } else {
+        pickupMarker.setLatLng(pickupLatLng);
+      }
+      map.setView(pickupLatLng, 16);
+      updateRoute();
+    }
+
+    // Set Pin Tujuan
+    function setDestLocation(lat, lng) {
+      destLatLng = [lat, lng];
+      if (!destMarker) {
+        destMarker = L.marker(destLatLng, { icon: redIcon, draggable: true }).addTo(map).bindPopup("Titik Tujuan (Geser Saya)");
+        destMarker.on('dragend', function (e) {
+          destLatLng = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+          reverseGeocode(destLatLng[0], destLatLng[1], 'dest-input');
+          updateRoute();
+        });
+      } else {
+        destMarker.setLatLng(destLatLng);
+      }
+      map.setView(destLatLng, 16);
+      updateRoute();
+    }
+
+    // Toggle Tombol Silang (X)
+    function toggleClearBtn(inputId, btnId) {
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      if (input.value.length > 0) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
+    // Fungsi Kosongkan Teks saat tombol X diklik
+    function clearInput(inputId, resultsId) {
+      document.getElementById(inputId).value = '';
+      document.getElementById(resultsId).classList.add('hidden');
+      toggleClearBtn(inputId, inputId === 'pickup-input' ? 'clear-pickup' : 'clear-dest');
+    }
+
+    // Autocomplete Search Tempat
+    function setupSearchAutocomplete(inputId, resultsId, clearBtnId, onSelect) {
+      const input = document.getElementById(inputId);
+      const resultsContainer = document.getElementById(resultsId);
+      let timer;
+
+      input.addEventListener('input', function () {
+        toggleClearBtn(inputId, clearBtnId);
+        clearTimeout(timer);
+        const query = input.value.trim();
+        if (query.length < 3) {
+          resultsContainer.classList.add('hidden');
+          return;
         }
+
+        timer = setTimeout(() => {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Indonesia')}&limit=5&addressdetails=1`;
+
+          fetch(url, { headers: { 'Accept-Language': 'id' } })
+            .then(res => res.json())
+            .then(data => {
+              resultsContainer.innerHTML = '';
+              if (data && data.length > 0) {
+                data.forEach(item => {
+                  const div = document.createElement('div');
+                  div.className = 'autocomplete-item';
+                  const mainName = item.display_name.split(',')[0];
+                  div.innerHTML = `<strong>${mainName}</strong><br><span class="text-[10px] text-gray-500">${item.display_name}</span>`;
+
+                  div.addEventListener('click', () => {
+                    input.value = item.display_name;
+                    toggleClearBtn(inputId, clearBtnId);
+                    resultsContainer.classList.add('hidden');
+                    onSelect(parseFloat(item.lat), parseFloat(item.lon));
+                  });
+
+                  resultsContainer.appendChild(div);
+                });
+                resultsContainer.classList.remove('hidden');
+              } else {
+                resultsContainer.classList.add('hidden');
+              }
+            })
+            .catch(() => resultsContainer.classList.add('hidden'));
+        }, 400);
       });
+    }
 
-      geocoder = new google.maps.Geocoder();
+    setupSearchAutocomplete('pickup-input', 'pickup-results', 'clear-pickup', (lat, lng) => {
+      setPickupLocation(lat, lng);
+    });
 
-      // Marker utama yang bisa digeser (draggable)
-      marker = new google.maps.Marker({
-        position: defaultLatLng,
-        map: map,
-        draggable: true,
-        title: "Geser untuk tentukan titik jemput"
-      });
+    setupSearchAutocomplete('dest-input', 'dest-results', 'clear-dest', (lat, lng) => {
+      setDestLocation(lat, lng);
+    });
 
-      // Update alamat saat marker selesai digeser
-      marker.addListener("dragend", function(event) {
-        const pos = event.latLng;
-        updateAddressFromLatLng(pos);
-      });
+    // Reverse Geocoding
+    function reverseGeocode(lat, lng, inputId) {
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.display_name) {
+            document.getElementById(inputId).value = data.display_name;
+            toggleClearBtn(inputId, inputId === 'pickup-input' ? 'clear-pickup' : 'clear-dest');
+          }
+        }).catch(() => {});
+    }
 
-      // Integrasi Google Places Autocomplete untuk kolom Penjemputan
-      const pickupInput = document.getElementById("pickup-location");
-      const pickupAutocomplete = new google.maps.places.Autocomplete(pickupInput);
-      pickupAutocomplete.bindTo("bounds", map);
-      pickupAutocomplete.addListener("place_changed", function() {
-        const place = pickupAutocomplete.getPlace();
-        if (!place.geometry) return;
-        map.setCenter(place.geometry.location);
-        map.setZoom(16);
-        marker.setPosition(place.geometry.location);
-      });
+    // Hitung Rute & Tarif Standar Ojek Online
+    function updateRoute() {
+      if (!pickupLatLng || !destLatLng) {
+        document.getElementById('distance-label').textContent = '0 km';
+        document.getElementById('total-price').textContent = 'Rp 0';
+        return;
+      }
 
-      // Integrasi Google Places Autocomplete untuk kolom Tujuan
-      const destInput = document.getElementById("destination-location");
-      const destAutocomplete = new google.maps.places.Autocomplete(destInput);
-      destAutocomplete.bindTo("bounds", map);
-      destAutocomplete.addListener("place_changed", function() {
-        const place = destAutocomplete.getPlace();
-        if (!place.geometry) return;
-        calculatePrice();
-      });
+      const url = `https://router.project-osrm.org/route/v1/driving/${pickupLatLng[1]},${pickupLatLng[0]};${destLatLng[1]},${destLatLng[0]}?overview=full&geometries=geojson`;
 
-      // Tombol Kustom GPS (Lokasi Saya) ala Google Maps
-      createGpsButton();
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.routes && data.routes[0]) {
+            const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            if (routeLine) map.removeLayer(routeLine);
 
-      // Deteksi GPS otomatis saat pertama kali dibuka
+            routeLine = L.polyline(coords, { color: '#00B14F', weight: 5, opacity: 0.9 }).addTo(map);
+            map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+
+            const distanceKm = parseFloat((data.routes[0].distance / 1000).toFixed(1));
+            
+            // Tarif Standar Ojol (0 - 4km = 9.000, >4km = +2.500/km)
+            let price = 9000;
+            if (distanceKm > 4) {
+              price += Math.round((distanceKm - 4) * 2500);
+            }
+
+            document.getElementById('distance-label').textContent = `${distanceKm} km`;
+            document.getElementById('total-price').textContent = `Rp ${price.toLocaleString('id-ID')}`;
+          }
+        });
+    }
+
+    // Fitur GPS Perangkat
+    function getGPSLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const pos = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            map.setCenter(pos);
-            marker.setPosition(pos);
-            updateAddressFromLatLng(pos);
+          pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            setPickupLocation(lat, lng);
+            reverseGeocode(lat, lng, 'pickup-input');
           },
-          () => {
-            updateAddressFromLatLng(defaultLatLng);
-          }
+          err => {
+            alert("Gagal mendeteksi lokasi HP. Pastikan GPS/Lokasi pada HP Anda sudah diaktifkan.");
+            console.warn("GPS error:", err.message);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
         );
+      } else {
+        alert("Fitur GPS tidak didukung oleh browser Anda.");
       }
     }
 
-    // Fungsi Reverse Geocoding Google untuk mengubah koordinat jadi teks alamat
-    function updateAddressFromLatLng(latLng) {
-      geocoder.geocode({ location: latLng }, (results, status) => {
-        if (status === "OK" && results[0]) {
-          document.getElementById("pickup-location").value = results[0].formatted_address;
-        } else {
-          document.getElementById("pickup-location").value = `${latLng.lat().toFixed(4)}, ${latLng.lng().toFixed(4)}`;
-        }
-      });
-    }
-
-    // Membuat Tombol GPS Melayang di Peta
-    function createGpsButton() {
-      const gpsDiv = document.createElement("div");
-      gpsDiv.style.cssText = "background:white; width:40px; height:40px; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; cursor:pointer; margin:10px; margin-top:15px;";
-      gpsDiv.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='#4285F4' width='22' height='22'><path d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/></svg>`;
-      gpsDiv.title = "Pusatkan ke Lokasi Saya";
-
-      gpsDiv.addEventListener("click", () => {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((position) => {
-            const pos = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            map.setCenter(pos);
-            marker.setPosition(pos);
-            updateAddressFromLatLng(pos);
-          });
-        }
-      });
-
-      map.controls[google.maps.ControlPosition.RIGHT_TOP].push(gpsDiv);
-    }
-
-    // Panggil initMap setelah Google Maps Script selesai dimuat
-    window.onload = function() {
-      if (typeof google !== 'undefined') {
-        initMap();
-      }
-    };
-
-    // Konfigurasi Layanan & Harga
-    const urlParams = new URLSearchParams(window.location.search);
-    const serviceType = urlParams.get('service') || 'bike';
-
-    const serviceConfig = {
-      bike: { title: 'Pesan OJEGIN Bike 🛵', rate: 10000 },
-      car: { title: 'Pesan OJEGIN Car 🚗', rate: 25000 },
-      food: { title: 'Pesan OJEGIN Food 🍔', rate: 15000 },
-      send: { title: 'OJEGIN Kirim Barang 📦', rate: 12000 }
-    };
-
-    const currentConfig = serviceConfig[serviceType] || serviceConfig.bike;
-    document.getElementById('service-title').textContent = currentConfig.title;
-
-    let balance = parseInt(localStorage.getItem('ojegin_balance')) || 150000;
-    document.getElementById('current-balance-label').textContent = `Saldo: Rp ${balance.toLocaleString('id-ID')}`;
-
-    let baseAmount = currentConfig.rate;
-    let finalAmount = baseAmount;
-
-    function calculatePrice() {
-      const dest = document.getElementById('destination-location').value;
-      baseAmount = dest.length > 0 ? currentConfig.rate + (dest.length * 200) : currentConfig.rate;
-      
-      let discount = 0;
-      const activePromo = localStorage.getItem('ojegin_active_promo');
-      if (activePromo === 'OJEGINNEW') {
-        discount = Math.min(baseAmount * 0.5, 15000);
-        document.getElementById('promo-row').style.display = 'flex';
-        document.getElementById('promo-discount').textContent = `-Rp ${discount.toLocaleString('id-ID')}`;
-      }
-
-      finalAmount = Math.max(0, baseAmount - discount);
-      document.getElementById('base-price').textContent = `Rp ${baseAmount.toLocaleString('id-ID')}`;
-      document.getElementById('total-price').textContent = `Rp ${finalAmount.toLocaleString('id-ID')}`;
-    }
-
-    calculatePrice();
+    // Otomatis Deteksi GPS saat halaman dimuat
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('pickup-input').value = '';
+      document.getElementById('dest-input').value = '';
+      getGPSLocation();
+    });
 
     function submitOrder() {
-      const dest = document.getElementById('destination-location').value;
-      
-      if (!dest) return alert('Silakan isi atau cari lokasi tujuan terlebih dahulu!');
-      if (finalAmount > balance) return alert('Saldo OJEGIN-PAY tidak mencukupi, silakan top up terlebih dahulu!');
-
-      balance -= finalAmount;
-      localStorage.setItem('ojegin_balance', balance);
-
-      let transactions = JSON.parse(localStorage.getItem('ojegin_transactions')) || [];
-      transactions.unshift({
-        type: serviceType,
-        title: `${currentConfig.title} ke ${dest}`,
-        amount: -finalAmount,
-        date: 'Baru saja',
-        status: 'Selesai',
-        icon: serviceType === 'bike' ? '🛵' : serviceType === 'car' ? '🚗' : serviceType === 'food' ? '🍔' : '📦'
-      });
-      localStorage.setItem('ojegin_transactions', JSON.stringify(transactions));
-      localStorage.removeItem('ojegin_active_promo');
-
-      alert('Pesanan Berhasil! Driver terdekat sedang menuju ke titik penjemputan Anda.');
+      if (!pickupLatLng || !destLatLng) {
+        alert('Harap tentukan Lokasi Jemput dan Lokasi Tujuan terlebih dahulu!');
+        return;
+      }
+      alert('Pesanan OJEGIN Berhasil Dibuat!');
       window.location.href = 'pelanggan.html';
     }
   </script>
