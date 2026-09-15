@@ -42,7 +42,10 @@
   <header class="bg-white px-4 py-3 flex items-center gap-3 sticky top-0 z-30 shadow-sm">
     <a href="pelanggan.html" class="w-9 h-9 flex items-center justify-center bg-gray-100 rounded-full font-bold text-gray-700 hover:bg-gray-200 transition">&larr;</a>
     <div class="flex items-center gap-2.5">
-      <div id="service-icon-container" class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-xl"></div>
+      <!-- Ikon Dinamis Sesuai Screenshot Menu Utama -->
+      <div id="service-icon-container" class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">
+        <!-- Emoji / Icon ditempatkan via JS -->
+      </div>
       <div>
         <h1 id="service-title" class="text-base font-bold text-gray-900">Pesan OJEGIN</h1>
         <p class="text-[10px] text-gray-500">Geser pin pada peta untuk lokasi presisi</p>
@@ -53,7 +56,7 @@
   <!-- Content Container -->
   <div class="p-4 space-y-4 flex-grow flex flex-col">
     
-    <!-- BOX PUTIH UTAMA -->
+    <!-- BOX PUTIH UTAMA (Peta & Form Pemesanan) -->
     <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200 space-y-3">
       
       <!-- 1. Peta Satelit -->
@@ -61,54 +64,67 @@
         <div id="map" class="w-full h-full"></div>
       </div>
 
-      <!-- 2. Section Khusus FOOD (Merchant & Menu dengan Kolom Jumlah) -->
+      <!-- 2. Section Khusus FOOD (Merchant & Menu) -->
       <div id="food-merchant-section" class="hidden space-y-3 bg-amber-50/60 p-3.5 rounded-xl border border-amber-200">
         <div>
           <label class="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-1">Pilih Merchant / Toko Makanan</label>
-          <select id="merchant-select" onchange="changeMerchant()" class="w-full bg-white border border-amber-300 text-xs font-semibold text-gray-800 rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-amber-500">
-            <!-- Koordinat merchant disertakan langsung di atribut data-lat & data-lng -->
-            <option value="resto1" data-lat="-6.3015" data-lng="107.1485">Nasi Goreng & Ayam Penyet Pak Mul</option>
-            <option value="resto2" data-lat="-6.3080" data-lng="107.1550">Warung Seblak & Baso Aci Teh Ita</option>
-            <option value="resto3" data-lat="-6.2950" data-lng="107.1420">Kopi Kenangan & Roti Bakar</option>
+          <select id="merchant-select" onchange="loadMerchantMenu()" class="w-full bg-white border border-amber-300 text-xs font-semibold text-gray-800 rounded-lg p-2.5 outline-none focus:ring-1 focus:ring-amber-500">
+            <option value="resto1">Nasi Goreng & Ayam Penyet Pak Mul (0.8 km)</option>
+            <option value="resto2">Warung Seblak & Baso Aci Teh Ita (1.2 km)</option>
+            <option value="resto3">Kopi Kenangan & Roti Bakar (2.0 km)</option>
           </select>
         </div>
         <div>
-          <label class="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-1.5">Pilih Menu & Jumlah</label>
-          <div id="menu-container" class="space-y-2 max-h-[180px] overflow-y-auto pr-1"></div>
+          <label class="text-[10px] font-bold text-amber-800 uppercase tracking-wider block mb-1.5">Pilih Menu Makanan</label>
+          <div id="menu-container" class="space-y-2 max-h-[160px] overflow-y-auto pr-1"></div>
         </div>
       </div>
 
-      <!-- 3. Section Khusus KIRIM PAKET -->
+      <!-- 3. Section Khusus KIRIM PAKET (Detail & Data Penerima) -->
       <div id="paket-detail-section" class="hidden space-y-3 bg-blue-50/60 p-3.5 rounded-xl border border-blue-200">
         <h2 class="text-xs font-bold text-blue-900 uppercase tracking-wider">Data & Keterangan Penerima Paket</h2>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-[9px] font-bold text-gray-500 block mb-1">Nama Penerima</label>
-            <input type="text" id="penerima-nama" placeholder="Contoh: Budi Santoso" class="w-full bg-white border border-blue-200 text-xs font-semibold text-gray-800 rounded-lg p-2 outline-none">
+            <input type="text" id="penerima-nama" placeholder="Contoh: Budi Santoso" class="w-full bg-white border border-blue-200 text-xs font-semibold text-gray-800 rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500">
           </div>
           <div>
-            <label class="text-[9px] font-bold text-gray-500 block mb-1">No. HP / WhatsApp</label>
-            <input type="tel" id="penerima-hp" placeholder="Contoh: 0812xxxxxxxx" class="w-full bg-white border border-blue-200 text-xs font-semibold text-gray-800 rounded-lg p-2 outline-none">
+            <label class="text-[9px] font-bold text-gray-500 block mb-1">No. HP / WhatsApp Penerima</label>
+            <input type="tel" id="penerima-hp" placeholder="Contoh: 0812xxxxxxxx" class="w-full bg-white border border-blue-200 text-xs font-semibold text-gray-800 rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500">
           </div>
         </div>
         <div>
-          <label class="text-[9px] font-bold text-gray-500 block mb-1">Detail Barang & Catatan</label>
-          <input type="text" id="penerima-catatan" placeholder="Contoh: Kotak kardus / Dokumen penting" class="w-full bg-white border border-blue-200 text-xs font-semibold text-gray-800 rounded-lg p-2 outline-none">
+          <label class="text-[9px] font-bold text-gray-500 block mb-1">Detail Barang & Catatan Tambahan</label>
+          <input type="text" id="penerima-catatan" placeholder="Contoh: Kotak kardus kecil / Dokumen penting / Jangan dibanting" class="w-full bg-white border border-blue-200 text-xs font-semibold text-gray-800 rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500">
         </div>
       </div>
 
       <!-- 4. Form Pemesanan Lokasi -->
       <div class="space-y-3 bg-gray-50 p-3.5 rounded-xl border border-gray-100">
         
-        <!-- Lokasi Jemput -->
+        <!-- Lokasi Jemput / Pengambilan -->
         <div id="pickup-container" class="flex items-start gap-3 relative">
           <div class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0 ring-4 ring-emerald-100 mt-3"></div>
           <div class="flex-grow relative">
-            <label id="pickup-label" class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Lokasi Jemput (Pin Hijau)</label>
-            <div class="relative flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2">
-              <input type="text" id="pickup-input" placeholder="Cari Lokasi Jemput..." class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none pr-12">
-              <button type="button" id="clear-pickup" onclick="clearInput('pickup-input', 'pickup-results')" class="hidden text-gray-400 font-bold text-xs bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center mr-1.5">&times;</button>
-              <button type="button" onclick="getGPSLocation()" class="p-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg></button>
+            <div class="flex justify-between items-center mb-1">
+              <label id="pickup-label" class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">Lokasi Jemput (Pin Hijau)</label>
+            </div>
+            
+            <div class="relative flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 shadow-sm">
+              <input type="text" id="pickup-input" placeholder="Cari Desa/Kecamatan/Nama Tempat..." autocomplete="off" class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none pr-12">
+              
+              <button type="button" id="clear-pickup" onclick="clearInput('pickup-input', 'pickup-results')" class="hidden text-gray-400 hover:text-gray-600 font-bold text-xs bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center leading-none mr-1.5">&times;</button>
+              
+              <button type="button" onclick="getGPSLocation()" title="Gunakan Lokasi Saat Ini" class="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-full border border-emerald-200 transition-all flex items-center justify-center active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <circle cx="12" cy="12" r="8"></circle>
+                  <line x1="12" y1="2" x2="12" y2="4"></line>
+                  <line x1="12" y1="20" x2="12" y2="22"></line>
+                  <line x1="2" y1="12" x2="4" y2="12"></line>
+                  <line x1="20" y1="12" x2="22" y2="12"></line>
+                </svg>
+              </button>
             </div>
             <div id="pickup-results" class="autocomplete-box hidden"></div>
           </div>
@@ -116,30 +132,43 @@
 
         <div id="pickup-divider" class="border-t border-gray-200 my-1 ml-6"></div>
 
-        <!-- Lokasi Tujuan -->
+        <!-- Lokasi Tujuan / Pengantaran -->
         <div class="flex items-start gap-3 relative">
           <div class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0 ring-4 ring-red-100 mt-3"></div>
           <div class="flex-grow relative">
             <label id="dest-label" class="text-[9px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Lokasi Tujuan (Pin Merah)</label>
-            <div class="relative flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2">
-              <input type="text" id="dest-input" placeholder="Cari Lokasi Tujuan..." class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none pr-12">
-              <button type="button" id="clear-dest" onclick="clearInput('dest-input', 'dest-results')" class="hidden text-gray-400 font-bold text-xs bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center mr-1.5">&times;</button>
-              <button type="button" onclick="getGPSDestLocation()" class="p-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg></button>
+            
+            <div class="relative flex items-center bg-white border border-gray-300 rounded-lg px-3 py-2 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 shadow-sm">
+              <input type="text" id="dest-input" placeholder="Cari Desa/Kecamatan/Nama Tempat..." autocomplete="off" class="w-full bg-transparent text-xs font-semibold text-gray-800 outline-none pr-12">
+              
+              <button type="button" id="clear-dest" onclick="clearInput('dest-input', 'dest-results')" class="hidden text-gray-400 hover:text-gray-600 font-bold text-xs bg-gray-200 rounded-full w-4 h-4 flex items-center justify-center leading-none mr-1.5">&times;</button>
+              
+              <button type="button" onclick="getGPSDestLocation()" title="Gunakan Lokasi Saat Ini" class="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 rounded-full border border-emerald-200 transition-all flex items-center justify-center active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <circle cx="12" cy="12" r="8"></circle>
+                  <line x1="12" y1="2" x2="12" y2="4"></line>
+                  <line x1="12" y1="20" x2="12" y2="22"></line>
+                  <line x1="2" y1="12" x2="4" y2="12"></line>
+                  <line x1="20" y1="12" x2="22" y2="12"></line>
+                </svg>
+              </button>
             </div>
+            <p class="text-[10px] text-gray-400 leading-tight mt-1">Ketik alamat atau geser pin merah di peta untuk ketepatan posisi</p>
             <div id="dest-results" class="autocomplete-box hidden"></div>
           </div>
         </div>
 
       </div>
 
-      <!-- Estimasi Harga -->
+      <!-- Estimasi Rincian & Harga -->
       <div class="space-y-1.5 text-xs px-2 pt-1">
         <div id="food-subtotal-row" class="hidden justify-between text-gray-500">
           <span>Subtotal Makanan</span>
           <span id="food-price-label">Rp 0</span>
         </div>
         <div class="flex justify-between text-gray-500">
-          <span id="ongkir-text">Estimasi Jarak</span>
+          <span id="ongkir-text">Estimasi Jarak (Rute Terdekat)</span>
           <span id="distance-label">0 km</span>
         </div>
         <div class="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t border-gray-100">
@@ -167,11 +196,31 @@
     const urlParams = new URLSearchParams(window.location.search);
     const serviceParam = (urlParams.get('service') || 'bike').toLowerCase();
 
+    // Ikon disamakan persis dengan Screenshot menu utama (Bike, Car, Food, Kirim)
     const serviceConfig = {
-      bike: { title: 'OJEGIN Bike', pickupText: 'Lokasi Penjemputan', destText: 'Lokasi Tujuan', icon: '🛵' },
-      car: { title: 'OJEGIN Car', pickupText: 'Lokasi Penjemputan', destText: 'Lokasi Tujuan', icon: '🚗' },
-      food: { title: 'OJEGIN Food', destText: 'Lokasi Pengantaran Makanan', icon: '🍔' },
-      paket: { title: 'Kirim Paket', pickupText: 'Lokasi Pengambilan Paket', destText: 'Lokasi Tujuan Penerima', icon: '📦' }
+      bike: {
+        title: 'OJEGIN Bike',
+        pickupText: 'Lokasi Penjemputan (Pin Hijau)',
+        destText: 'Lokasi Tujuan (Pin Merah)',
+        icon: '🛵'
+      },
+      car: {
+        title: 'OJEGIN Car',
+        pickupText: 'Lokasi Penjemputan (Pin Hijau)',
+        destText: 'Lokasi Tujuan (Pin Merah)',
+        icon: '🚗'
+      },
+      food: {
+        title: 'OJEGIN Food',
+        destText: 'Lokasi Pengantaran Makanan (Pin Merah)',
+        icon: '🍔'
+      },
+      paket: {
+        title: 'Kirim Paket',
+        pickupText: 'Lokasi Pengambilan Paket (Pin Hijau)',
+        destText: 'Lokasi Tujuan Penerima (Pin Merah)',
+        icon: '📦'
+      }
     };
 
     let currentKey = 'bike';
@@ -185,9 +234,10 @@
     document.getElementById('pickup-label').innerText = currentConfig.pickupText;
     document.getElementById('dest-label').innerText = currentConfig.destText;
 
+    // --- SETUP TAMPILAN KHUSUS FOOD / PAKET ---
     const merchantData = {
       resto1: [
-        { name: 'Nasi Goreng Spesial', price: 18000 },
+        { name: 'Nasi Goreng Spesial + Telur', price: 18000 },
         { name: 'Ayam Penyet Sambal Ijo', price: 20000 },
         { name: 'Es Teh Manis', price: 5000 }
       ],
@@ -208,25 +258,10 @@
       document.getElementById('food-merchant-section').classList.remove('hidden');
       document.getElementById('food-subtotal-row').classList.remove('hidden');
       document.getElementById('ongkir-text').innerText = 'Ongkos Kirim Makanan';
-      
-      // Ambil koordinat merchant otomatis dari option yang terpilih
-      setMerchantCoordinates();
+      pickupLatLng = [-6.300000, 107.150000]; 
+      loadMerchantMenu();
     } else if (currentKey === 'paket') {
       document.getElementById('paket-detail-section').classList.remove('hidden');
-    }
-
-    function setMerchantCoordinates() {
-      const select = document.getElementById('merchant-select');
-      const selectedOption = select.options[select.selectedIndex];
-      const lat = parseFloat(selectedOption.getAttribute('data-lat'));
-      const lng = parseFloat(selectedOption.getAttribute('data-lng'));
-      
-      setPickupLocation(lat, lng);
-      loadMerchantMenu();
-    }
-
-    function changeMerchant() {
-      setMerchantCoordinates();
     }
 
     function loadMerchantMenu() {
@@ -234,6 +269,7 @@
       const menuList = merchantData[selectedResto] || [];
       const container = document.getElementById('menu-container');
       container.innerHTML = '';
+      selectedFoodTotal = 0;
 
       menuList.forEach((item, index) => {
         const div = document.createElement('div');
@@ -244,7 +280,7 @@
             <p class="text-[11px] font-semibold text-emerald-600">Rp ${item.price.toLocaleString('id-ID')}</p>
           </div>
           <div class="flex items-center gap-2">
-            <input type="number" id="qty-${index}" min="0" value="0" onchange="calculateFoodTotal()" data-price="${item.price}" class="w-14 text-center border border-gray-300 rounded-md text-xs font-semibold py-1 outline-none focus:ring-1 focus:ring-amber-500">
+            <input type="checkbox" id="menu-${index}" onchange="calculateFoodTotal()" data-price="${item.price}" class="w-4 h-4 accent-emerald-600 rounded cursor-pointer">
           </div>
         `;
         container.appendChild(div);
@@ -254,11 +290,9 @@
 
     function calculateFoodTotal() {
       selectedFoodTotal = 0;
-      const qtyInputs = document.querySelectorAll('#menu-container input[type="number"]');
-      qtyInputs.forEach(input => {
-        let qty = parseInt(input.value) || 0;
-        let price = parseInt(input.getAttribute('data-price')) || 0;
-        selectedFoodTotal += (qty * price);
+      const checkboxes = document.querySelectorAll('#menu-container input[type="checkbox"]:checked');
+      checkboxes.forEach(cb => {
+        selectedFoodTotal += parseInt(cb.getAttribute('data-price'));
       });
       document.getElementById('food-price-label').textContent = `Rp ${selectedFoodTotal.toLocaleString('id-ID')}`;
       updateRoute();
@@ -287,25 +321,23 @@
     function setPickupLocation(lat, lng) {
       pickupLatLng = [lat, lng];
       if (!pickupMarker) {
-        pickupMarker = L.marker(pickupLatLng, { icon: greenIcon, draggable: currentKey !== 'food' }).addTo(map).bindPopup("Titik Merchant / Jemput");
-        if (currentKey !== 'food') {
-          pickupMarker.on('dragend', function (e) {
-            pickupLatLng = [e.target.getLatLng().lat, e.target.getLatLng().lng];
-            reverseGeocode(pickupLatLng[0], pickupLatLng[1], 'pickup-input');
-            updateRoute();
-          });
-        }
+        pickupMarker = L.marker(pickupLatLng, { icon: greenIcon, draggable: true }).addTo(map).bindPopup("Titik Jemput (Geser Saya)");
+        pickupMarker.on('dragend', function (e) {
+          pickupLatLng = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+          reverseGeocode(pickupLatLng[0], pickupLatLng[1], 'pickup-input');
+          updateRoute();
+        });
       } else {
         pickupMarker.setLatLng(pickupLatLng);
       }
-      map.setView(pickupLatLng, 15);
+      map.setView(pickupLatLng, 16);
       updateRoute();
     }
 
     function setDestLocation(lat, lng) {
       destLatLng = [lat, lng];
       if (!destMarker) {
-        destMarker = L.marker(destLatLng, { icon: redIcon, draggable: true }).addTo(map).bindPopup("Titik Tujuan");
+        destMarker = L.marker(destLatLng, { icon: redIcon, draggable: true }).addTo(map).bindPopup("Titik Tujuan (Geser Saya)");
         destMarker.on('dragend', function (e) {
           destLatLng = [e.target.getLatLng().lat, e.target.getLatLng().lng];
           reverseGeocode(destLatLng[0], destLatLng[1], 'dest-input');
@@ -314,7 +346,7 @@
       } else {
         destMarker.setLatLng(destLatLng);
       }
-      map.setView(destLatLng, 15);
+      map.setView(destLatLng, 16);
       updateRoute();
     }
 
@@ -347,6 +379,7 @@
 
         timer = setTimeout(() => {
           const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Indonesia')}&limit=5&addressdetails=1`;
+
           fetch(url, { headers: { 'Accept-Language': 'id' } })
             .then(res => res.json())
             .then(data => {
@@ -357,26 +390,27 @@
                   div.className = 'autocomplete-item';
                   const mainName = item.display_name.split(',')[0];
                   div.innerHTML = `<strong>${mainName}</strong><br><span class="text-[10px] text-gray-500">${item.display_name}</span>`;
+
                   div.addEventListener('click', () => {
                     input.value = item.display_name;
                     toggleClearBtn(inputId, clearBtnId);
                     resultsContainer.classList.add('hidden');
                     onSelect(parseFloat(item.lat), parseFloat(item.lon));
                   });
+
                   resultsContainer.appendChild(div);
                 });
                 resultsContainer.classList.remove('hidden');
               } else {
                 resultsContainer.classList.add('hidden');
               }
-            }).catch(() => resultsContainer.classList.add('hidden'));
+            })
+            .catch(() => resultsContainer.classList.add('hidden'));
         }, 400);
       });
     }
 
-    if (currentKey !== 'food') {
-      setupSearchAutocomplete('pickup-input', 'pickup-results', 'clear-pickup', (lat, lng) => setPickupLocation(lat, lng));
-    }
+    setupSearchAutocomplete('pickup-input', 'pickup-results', 'clear-pickup', (lat, lng) => setPickupLocation(lat, lng));
     setupSearchAutocomplete('dest-input', 'dest-results', 'clear-dest', (lat, lng) => setDestLocation(lat, lng));
 
     function reverseGeocode(lat, lng, inputId) {
@@ -398,13 +432,13 @@
         return;
       }
 
-      const url = `https://router.project-osrm.org/route/v1/driving/${pickupLatLng[1]},${pickupLatLng[0]};${destLatLng[1]},${destLatLng[0]}?overview=full&geometries=geojson`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${pickupLatLng[1]},${pickupLatLng[0]};${destLatLng[1]},${destLatLng[0]}?overview=full&geometries=geojson&alternatives=true`;
 
       fetch(url)
         .then(res => res.json())
         .then(data => {
           if (data.routes && data.routes.length > 0) {
-            let shortestRoute = data.routes[0];
+            let shortestRoute = data.routes.reduce((min, route) => route.distance < min.distance ? route : min, data.routes[0]);
             const coords = shortestRoute.geometry.coordinates.map(c => [c[1], c[0]]);
 
             if (routeLine) map.removeLayer(routeLine);
@@ -416,14 +450,14 @@
             let basePrice = (currentKey === 'car') ? 15000 : 9000;
             let perKmRate = (currentKey === 'car') ? 4000 : 2500;
 
-            let ongkir = basePrice;
+            let price = basePrice;
             if (distanceKm > 4) {
-              ongkir += Math.round((distanceKm - 4) * perKmRate);
+              price += Math.round((distanceKm - 4) * perKmRate);
             }
 
-            let grandTotal = ongkir + selectedFoodTotal;
+            let grandTotal = price + selectedFoodTotal;
 
-            document.getElementById('distance-label').textContent = `${distanceKm} km (Rp ${ongkir.toLocaleString('id-ID')})`;
+            document.getElementById('distance-label').textContent = `${distanceKm} km`;
             document.getElementById('total-price').textContent = `Rp ${grandTotal.toLocaleString('id-ID')}`;
           }
         });
@@ -433,7 +467,7 @@
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           pos => setPickupLocation(pos.coords.latitude, pos.coords.longitude),
-          () => alert("Gagal mengambil GPS.")
+          () => alert("Gagal mengambil GPS. Pastikan izin lokasi aktif.")
         );
       }
     }
@@ -445,7 +479,7 @@
             setDestLocation(pos.coords.latitude, pos.coords.longitude);
             reverseGeocode(pos.coords.latitude, pos.coords.longitude, 'dest-input');
           },
-          () => alert("Gagal mengambil GPS.")
+          () => alert("Gagal mengambil GPS. Pastikan izin lokasi aktif.")
         );
       }
     }
@@ -455,25 +489,23 @@
       if (currentKey !== 'food') {
         document.getElementById('pickup-input').value = '';
         getGPSLocation();
-      } else {
-        getGPSDestLocation();
       }
     });
 
     function submitOrder() {
-      if (!destLatLng) {
-        alert('Harap tentukan Lokasi Tujuan terlebih dahulu!');
+      if (!pickupLatLng || !destLatLng) {
+        alert('Harap tentukan lokasi jemput dan tujuan terlebih dahulu!');
         return;
       }
       if (currentKey === 'food' && selectedFoodTotal === 0) {
-        alert('Harap masukkan jumlah minimal 1 pada salah satu menu makanan!');
+        alert('Harap pilih minimal 1 menu makanan!');
         return;
       }
       if (currentKey === 'paket') {
         const nama = document.getElementById('penerima-nama').value.trim();
         const hp = document.getElementById('penerima-hp').value.trim();
         if (!nama || !hp) {
-          alert('Harap isi Nama dan No. HP Penerima paket!');
+          alert('Harap isi Nama dan No. HP Penerima paket dengan lengkap!');
           return;
         }
       }
